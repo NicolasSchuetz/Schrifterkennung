@@ -2,7 +2,7 @@
 import tensorflow as tf
 from tensorflow import keras
 from keras.models import Sequential
-from keras.layers import Dense, Flatten, Input, Dropout
+from keras.layers import Dense, Flatten, Input, Dropout, Conv2D, MaxPooling2D
 
 import numpy as np
 import pandas as pd
@@ -16,11 +16,10 @@ from sklearn.model_selection import train_test_split
 features,labels=get_data.load_tensorflow_data()
 
 #Featuers -> Bilder (bekommt die Ki)
-print(features)
-print("----------------------------")
+#print(features)
+#print("----------------------------")
 #Labels ->0-25 bzw. A-Z (soll di Ki zuordnen)
-print(labels)
-
+#print(labels)
 
 #Split data
 train_features, test_features, train_labels, test_labels = train_test_split(
@@ -31,19 +30,27 @@ train_features, test_features, train_labels, test_labels = train_test_split(
     shuffle=True
 )
 
-
-#Model architecutre
+#Model architecutre (https://adamharley.com/nn_vis/)
 model = Sequential([
-    Input(shape=(32, 32)),     # images are 32x32
-    Flatten(),                 # becomes 784
-    Dense(256, activation='relu'), #?
-    Dropout(0.3),
-    Dense(128, activation='relu'), #?
-    Dropout(0.3),
-    Dense(64,activation='relu'),
-    Dropout(0.2),
-    Dense(26, activation='softmax')   #26 end layers
+    # Input: 32x32 grayscale image
+    Input(shape=(32, 32, 1)),
+    # 1. Convolution Block
+    Conv2D(32, (3, 3), activation='relu', padding='same'),
+    MaxPooling2D((2, 2)),   # 32x32 -> 16x16
+    # 2. Convolution Block
+    Conv2D(64, (3, 3), activation='relu', padding='same'),
+    MaxPooling2D((2, 2)),   # 16x16 -> 8x8
+    # 3. Convolution Block
+    Conv2D(128, (3, 3), activation='relu', padding='same'),
+    MaxPooling2D((2, 2)),   # 8x8 -> 4x4 
+    # Flatten
+    Flatten(),                              #Macht Array 1D
+    # Fully Connected Layer
+    Dense(128, activation='relu'),          #Hiddenlayers
+    # Output Layer (26 Klassen)
+    Dense(26, activation='softmax')         #Outputlayers (A-Z)
 ])
+
 #Compile model
 model.compile(loss='sparse_categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
 
@@ -55,3 +62,4 @@ model.fit(train_features, train_labels, epochs=50, batch_size=64)
 #Test models accuracy
 loss,accuracy=model.evaluate(test_features,test_labels)
 print(f"Loss: {loss}, Accuracy: {accuracy}")
+model.save("model.keras")
